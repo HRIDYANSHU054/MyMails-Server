@@ -346,7 +346,7 @@ export async function respondWithGen(req, resp) {
     google.options({ auth: oAuth2Client });
     const gmailClient = google.gmail("v1");
 
-    const { messages } = await getInboxUtil(); //inbox sending 10 latest unseenn mails
+    const { messages } = await getInboxUtil(gmailClient); //inbox sending 10 latest unseenn mails
 
     console.log("Only responding to label=Interested mails");
 
@@ -360,6 +360,7 @@ export async function respondWithGen(req, resp) {
     for (const mail of messages) {
       const { label, response } = await classifyAndGenerateResponseUtil(
         mail.id,
+        gmailClient,
         msgsReplied <= upperLimit
       ); //for each mail generayt a label but only a response when its labelled interested or when api limit has not exhausted
 
@@ -367,7 +368,7 @@ export async function respondWithGen(req, resp) {
 
       let replied = false;
       if (label === "Interested") {
-        await sendMailUtil(mail.senderEmail, response);
+        // await sendMailUtil(mail.senderEmail, response, gmailClient);
         replied = true;
         msgsReplied++;
       }

@@ -5,14 +5,14 @@ import { config } from "dotenv";
 config();
 
 import BULLMQ from "bullmq";
-import { gmailClient } from "../controllers/google.controller.js";
+// import { gmailClient } from "../controllers/google.controller.js";
 import {
   analyzeEmailContent,
   generateMailResponse,
 } from "../Gemini/gemini.service.js";
 import { parseEmail } from "./formatters.js";
 
-async function getCurrentUserEmailUtil() {
+async function getCurrentUserEmailUtil(gmailClient) {
   try {
     const result = await gmailClient.users.getProfile({
       userId: "me",
@@ -25,9 +25,9 @@ async function getCurrentUserEmailUtil() {
 }
 
 //sendMail
-export const sendMailUtil = async (to, mailContent) => {
+export const sendMailUtil = async (to, mailContent, gmailClient) => {
   try {
-    const fromMail = await getCurrentUserEmailUtil();
+    const fromMail = await getCurrentUserEmailUtil(gmailClient);
 
     const mailLines = [
       `From: ${fromMail}`,
@@ -95,7 +95,7 @@ export const sendMailInQueueUtil = async (messages) => {
 };
 
 //getInbox and unseen mails
-export async function getInboxUtil() {
+export async function getInboxUtil(gmailClient) {
   try {
     const emailsResponse = await gmailClient.users.messages.list({
       userId: "me",
@@ -173,6 +173,7 @@ export async function getInboxUtil() {
 //classification and response sending
 export async function classifyAndGenerateResponseUtil(
   messageId,
+  gmailClient,
   generateResponse = true
 ) {
   try {
