@@ -32,3 +32,6 @@ the api endpoints are
 commit 2 sees for this and brings in authentication ( Note this means you cannot access the api without auth b ut this implements a full fledged auth + usage flow for the app )
 
 If you want to use this project as command line utility you can make use of the functions I created in mailUtils.js file they are able to execute on their own being separate from any web app.
+
+Also here is a simple React Client you can use to access this application
+https://github.com/HRIDYANSHU054/MyMails-Client
