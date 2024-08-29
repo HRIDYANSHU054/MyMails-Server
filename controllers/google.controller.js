@@ -346,11 +346,36 @@ export async function respondWithGen(req, resp) {
     google.options({ auth: oAuth2Client });
     const gmailClient = google.gmail("v1");
 
-    const { messages } = await getInboxUtil(); //inbox sending 2 latest unseenn mails
+    const { messages } = await getInboxUtil(); //inbox sending 10 latest unseenn mails
 
     console.log("Only responding to label=Interested mails");
 
-    messages.forEach(async (mail, ind) => {
+    const upperLimit = 3;
+    let msgsReplied = 0;
+    const classificationAndGenerationResults = [];
+    //although this for loop is going to be slow
+    //bbut it provides more control over controlling nature of api calls
+    //by sync the messages one after another and not it parallel
+    //to see how many msgs we have responed to
+    for (const mail of messages) {
+      const { label, response } = await classifyAndGenerateResponseUtil(
+        mail.id,
+        msgsReplied <= upperLimit
+      ); //for each mail generayt a label but only a response when its labelled interested or when api limit has not exhausted
+
+      console.log(`Labelled as: ${label}`);
+
+      let replied = false;
+      if (label === "Interested") {
+        await sendMailUtil(mail.senderEmail, response);
+        replied = true;
+        msgsReplied++;
+      }
+
+      classificationAndGenerationResults.push({ label, response, replied });
+    }
+
+    /*messages.forEach(async (mail, ind) => {
       const { label, response } = await classifyAndGenerateResponseUtil(
         mail.id
       ); //for each mail generayt a label but only a response when its labelled interested or when api limit has not exhausted
@@ -360,13 +385,14 @@ export async function respondWithGen(req, resp) {
       if (label === "Interested") {
         await sendMailUtil(mail.senderEmail, response);
       }
-    });
+    });*/
 
     resp.status(200).json({
       success: "mails sent",
+      classificationAndGenerationResults,
     });
   } catch (error) {
-    console.log("error while responding to ail:", error.message);
+    console.log("error while responding to mail:", error.message);
     resp.status(500).json({ message: error.message });
   }
 }

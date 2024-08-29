@@ -101,7 +101,7 @@ export async function getInboxUtil() {
       userId: "me",
       labelIds: ["INBOX"],
       q: "is:unread", //only those which are unseen
-      maxResults: 2,
+      maxResults: 10,
     });
 
     const emails = emailsResponse.data.messages;
