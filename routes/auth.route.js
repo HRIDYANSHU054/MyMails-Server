@@ -29,7 +29,7 @@ router.get("/logout", getLogout);
 
 router.get("/check", (req, resp, next) => {
   if (req.isAuthenticated()) {
-    resp.status(200).json({ user: req.user });
+    resp.status(200).json({ user: req.user.profile.displayName }); //return only the name to the client
   } else {
     resp.status(401).json({ user: null });
   }

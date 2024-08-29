@@ -368,7 +368,7 @@ export async function respondWithGen(req, resp) {
 
       let replied = false;
       if (label === "Interested") {
-        // await sendMailUtil(mail.senderEmail, response, gmailClient);
+        await sendMailUtil(mail.senderEmail, response, gmailClient);
         replied = true;
         msgsReplied++;
       }
