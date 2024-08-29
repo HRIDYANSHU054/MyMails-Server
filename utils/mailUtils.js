@@ -3,6 +3,8 @@
 
 import { config } from "dotenv";
 config();
+
+import BULLMQ from "bullmq";
 import { gmailClient } from "../controllers/google.controller.js";
 import {
   analyzeEmailContent,
@@ -48,6 +50,46 @@ export const sendMailUtil = async (to, mailContent) => {
     return { success: "Mail sent", result };
   } catch (error) {
     console.log("error while sending mail:", error.message);
+    throw error;
+  }
+};
+
+//sendMailInQueue
+export const sendMailInQueueUtil = async (messages) => {
+  try {
+    const fromMail = await getCurrentUserEmailUtil();
+    const queue = new BULLMQ.Queue("sendMailQueue");
+
+    //lets add the messages to  the queue
+    messages.forEach((msg) => {
+      const mailLines = [
+        `From: ${fromMail}`,
+        `To: ${msg.to}`,
+        "Subject: Testing MyMails(Nodejs + GMail)",
+        "",
+        `${msg.mailContent}`,
+      ];
+
+      const mail = mailLines.join("\r\n").trim();
+      const base64Email = Buffer.from(mail).toString("base64");
+      queue.add({
+        raw: base64Email,
+      }); //added the mail to queue , we will supply this object to sendmai
+    });
+
+    //process the queue
+    //two jobs at once
+    queue.process(2, async (job) => {
+      //send mail
+      const result = await gmailClient.users.messages.send({
+        userId: "me",
+        requestBody: job.data,
+      });
+    });
+
+    return { success: "Queue Mails sent" };
+  } catch (error) {
+    console.log("error while sending queue mails:", error.message);
     throw error;
   }
 };
@@ -129,7 +171,10 @@ export async function getInboxUtil() {
 }
 
 //classification and response sending
-export async function classifyAndGenerateResponseUtil(messageId) {
+export async function classifyAndGenerateResponseUtil(
+  messageId,
+  generateResponse = true
+) {
   try {
     const msgResp = await gmailClient.users.messages.get({
       userId: "me",
@@ -145,6 +190,12 @@ export async function classifyAndGenerateResponseUtil(messageId) {
     const { label } = await analyzeEmailContent(
       `Subject: ${subject}\n Content: ${text}`
     );
+
+    if (label !== "Interested")
+      return { label, response: "Not responded as deemed uneccessary" };
+
+    if (!generateResponse)
+      return { label, response: "Not generated as api limit exhausted" };
 
     const response = await generateMailResponse(
       label,

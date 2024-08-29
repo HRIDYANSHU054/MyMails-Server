@@ -11,15 +11,25 @@
   "license": "ISC",
   "dependencies": {
     "@google/generative-ai": "^0.17.1",
+    "bullmq": "^5.12.11",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "express-session": "^1.18.0",
     "googleapis": "^143.0.0",
     "html-to-text": "^9.0.5",
     "imap": "^0.8.19",
     "mailparser": "^3.7.1",
     "mongoose": "^8.5.4",
     "nodemailer": "^6.9.14",
-    "openai": "^4.56.1"
+    "openai": "^4.56.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth2": "^0.2.0",
+    "passport-google-oauth20": "^2.0.0"
+  },
+  "overrides": {
+    "passport-oauth2": {
+      "oauth": "^0.10.0"
+    }
   }
 }

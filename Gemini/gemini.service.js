@@ -13,7 +13,6 @@ export async function analyzeEmailContent(mailContent) {
 
     const result = await model.generateContent(prompt);
     const response = result.response;
-    // const label = response.candidates[0].output.trim();
     const label = response.candidates[0].content;
 
     const text = response.text();
@@ -44,8 +43,8 @@ export async function generateMailResponse(label, mailContent) {
     }
 
     const model = geminiAI.getGenerativeModel({
-      // model: "gemini-1.5-flash-latest",
-      model: "gemini-pro", //limit 2 reqs per minute
+      model: "gemini-1.5-flash-latest",
+      // model: "gemini-pro", //limit 2 reqs per minute
     }); // Choose the appropriate Gemini model
 
     const options = {

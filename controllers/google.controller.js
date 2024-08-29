@@ -12,6 +12,7 @@ import {
 import {
   classifyAndGenerateResponseUtil,
   getInboxUtil,
+  sendMailInQueueUtil,
   sendMailUtil,
 } from "../utils/mailUtils.js";
 
@@ -62,6 +63,13 @@ const url = oAuth2Client.generateAuthUrl({
 //sendMail
 export const sendMail = async (req, resp) => {
   try {
+    oAuth2Client.setCredentials({
+      access_token: req.user.accessToken,
+    });
+
+    google.options({ auth: oAuth2Client });
+    const gmailClient = google.gmail("v1");
+
     const mailLines = [
       `From: ${process.env.MAIL_FROM}`,
       `To: ${process.env.MAIL_TO}`,
@@ -91,6 +99,13 @@ export const sendMail = async (req, resp) => {
 //getDrafts
 export const getDrafts = async (req, resp) => {
   try {
+    oAuth2Client.setCredentials({
+      access_token: req.user.accessToken,
+    });
+
+    google.options({ auth: oAuth2Client });
+    const gmailClient = google.gmail("v1");
+
     const fetchResp = await gmailClient.users.drafts.list({
       userId: "me",
       maxResults: 10,
@@ -108,6 +123,13 @@ export const getDrafts = async (req, resp) => {
 export const getMail = async (req, resp) => {
   try {
     const { messageId } = req.params;
+    oAuth2Client.setCredentials({
+      access_token: req.user.accessToken,
+    });
+
+    google.options({ auth: oAuth2Client });
+    const gmailClient = google.gmail("v1");
+
     if (!messageId) throw new Error("Insufficient args");
     const msgResp = await gmailClient.users.messages.get({
       userId: "me",
@@ -138,6 +160,13 @@ export const getMail = async (req, resp) => {
 //getMailList
 export const getMailList = async (req, resp) => {
   try {
+    oAuth2Client.setCredentials({
+      access_token: req.user.accessToken,
+    });
+
+    google.options({ auth: oAuth2Client });
+    const gmailClient = google.gmail("v1");
+
     const res = await gmailClient.users.messages.list({
       userId: "me",
       maxResults: 10,
@@ -189,6 +218,14 @@ export const getMailList = async (req, resp) => {
 //getInbox
 export async function getInbox(req, resp) {
   try {
+    console.log(req.user.profile.displayName);
+    oAuth2Client.setCredentials({
+      access_token: req.user.accessToken,
+    });
+
+    google.options({ auth: oAuth2Client });
+    const gmailClient = google.gmail("v1");
+
     const emailsResponse = await gmailClient.users.messages.list({
       userId: "me",
       labelIds: ["INBOX"],
@@ -264,6 +301,13 @@ export async function getInbox(req, resp) {
 
 export async function getLabels(req, resp) {
   try {
+    oAuth2Client.setCredentials({
+      access_token: req.user.accessToken,
+    });
+
+    google.options({ auth: oAuth2Client });
+    const gmailClient = google.gmail("v1");
+
     const { messageId } = req.params;
     const msgResp = await gmailClient.users.messages.get({
       userId: "me",
@@ -295,17 +339,32 @@ export async function getLabels(req, resp) {
 //combines all (the do it all route)
 export async function respondWithGen(req, resp) {
   try {
-    const { messages } = await getInboxUtil();
+    oAuth2Client.setCredentials({
+      access_token: req.user.accessToken,
+    });
 
-    messages.forEach(async (mail) => {
+    google.options({ auth: oAuth2Client });
+    const gmailClient = google.gmail("v1");
+
+    const { messages } = await getInboxUtil(); //inbox sending 2 latest unseenn mails
+
+    console.log("Only responding to label=Interested mails");
+
+    messages.forEach(async (mail, ind) => {
       const { label, response } = await classifyAndGenerateResponseUtil(
         mail.id
-      );
+      ); //for each mail generayt a label but only a response when its labelled interested or when api limit has not exhausted
 
-      if (label === "Interested")
+      console.log(`Labelled as: ${label}`);
+
+      if (label === "Interested") {
         await sendMailUtil(mail.senderEmail, response);
+      }
     });
-    resp.status(200).json({ success: "mails sent" });
+
+    resp.status(200).json({
+      success: "mails sent",
+    });
   } catch (error) {
     console.log("error while responding to ail:", error.message);
     resp.status(500).json({ message: error.message });
